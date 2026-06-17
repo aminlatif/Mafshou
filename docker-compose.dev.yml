@@ -1,0 +1,39 @@
+services:
+  core:
+    volumes:
+      - type: bind
+        source: ./core
+        target: /src
+      - type: bind
+        source: ./extra/cargo/registry
+        target: /home/mafshou/.cargo/registry
+
+  db_dashboard:
+    image: "${MAFSHOU_PROJECT_NAME}_db_dashboard:latest"
+    container_name: "${MAFSHOU_PROJECT_NAME}_db_dashboard"
+    build:
+      context: "./db/dashboard/"
+      dockerfile: "Dockerfile"
+      args:
+        - "ENVIRONMENT_MODE=${MAFSHOU_ENVIRONMENT_MODE}"
+        - "TIMEZONE=${MAFSHOU_TIMEZONE}"
+    environment:
+      - ADMINER_DEFAULT_SERVER=db
+      - ADMINER_AUTOLOGIN_DRIVER=pgsql
+      - ADMINER_AUTOLOGIN_USER=${MAFSHOU_DATABASE_USERNAME}
+      - ADMINER_AUTOLOGIN_PASSWORD=${MAFSHOU_DATABASE_PASSWORD}
+      - ADMINER_AUTOLOGIN_DB=${MAFSHOU_DATABASE_NAME}
+      - ADMINER_DESIGN=nette
+      - ADMINER_PLUGINS=tables-filter tinymce auto-login
+    ports:
+      - "${MAFSHOU_PORT_PREFIX}880:8080"
+    depends_on:
+      - db
+    networks:
+      - default-network
+
+#   frontend:
+#     volumes:
+#       - type: bind
+#         source: ./frontend
+#         target: /usr/src/mafshou

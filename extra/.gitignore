@@ -1,0 +1,2 @@
+/cargo/registry/*
+!/cargo/registry/.gitkeep

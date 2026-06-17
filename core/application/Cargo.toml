@@ -1,0 +1,16 @@
+[package]
+name = "mafshou_application"
+version.workspace = true
+authors.workspace = true
+description.workspace = true
+documentation.workspace = true
+homepage.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+axum = { workspace = true }
+tokio = { workspace = true }
+
+[lints]
+workspace = true

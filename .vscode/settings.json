@@ -1,0 +1,7 @@
+{
+    "files.exclude": {
+        "**/core": true,
+        "**/db": true,
+        "**/extra": true
+    }
+}

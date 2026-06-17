@@ -1,0 +1,21 @@
+{
+	"folders": [
+		{
+			"path": "core",
+			"name": "Core"
+		},
+		{
+			"path": "db",
+			"name": "DB"
+		},
+		{
+			"path": "extra",
+			"name": "Extra"
+		},
+		{
+			"path": ".",
+			"name": "Workspace"
+		}
+	],
+	"settings": {}
+}

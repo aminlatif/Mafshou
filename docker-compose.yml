@@ -1,0 +1,112 @@
+services:
+  init-volumes:
+    image: alpine:latest
+    container_name: "${MAFSHOU_PROJECT_NAME}_init_volumes"
+    user: "root"
+    volumes:
+      - db_data:/mnt/data
+    network_mode: "none"
+    command: ["chown", "-R", "70:70", "/mnt/data"]
+
+  db:
+    image: "${MAFSHOU_PROJECT_NAME}_db:latest"
+    container_name: "${MAFSHOU_PROJECT_NAME}_db"
+    build:
+      context: "./db/"
+      dockerfile: "Dockerfile"
+      args:
+        - "ENVIRONMENT_MODE=${MAFSHOU_ENVIRONMENT_MODE}"
+        - "TIMEZONE=${MAFSHOU_TIMEZONE}"
+        - "TZ=${MAFSHOU_TIMEZONE}"
+    shm_size: 128mb
+    environment:
+      ENVIRONMENT_MODE: ${MAFSHOU_ENVIRONMENT_MODE}
+      TIMEZONE: ${MAFSHOU_TIMEZONE}
+      TZ: ${MAFSHOU_TIMEZONE}
+      POSTGRES_DB: "${MAFSHOU_DATABASE_NAME}"
+      POSTGRES_USER: "${MAFSHOU_DATABASE_USERNAME}"
+      POSTGRES_PASSWORD: "${MAFSHOU_DATABASE_PASSWORD}"
+    ports:
+      - "${MAFSHOU_PORT_PREFIX}432:5432"
+    depends_on:
+      init-volumes:
+        condition: service_completed_successfully
+    volumes:
+      - type: volume
+        source: db_data
+        target: /var/lib/postgresql
+        volume:
+          nocopy: true
+    networks:
+      - default-network
+
+  core:
+    image: "${MAFSHOU_PROJECT_NAME}_core:latest"
+    container_name: "${MAFSHOU_PROJECT_NAME}_core"
+    build:
+      context: "./core/"
+      dockerfile: "Dockerfile"
+      args:
+        - "ENVIRONMENT_MODE=${MAFSHOU_ENVIRONMENT_MODE}"
+        - "TIMEZONE=${MAFSHOU_TIMEZONE}"
+        - "TZ=${MAFSHOU_TIMEZONE}"
+        - "USER_ID:${MAFSHOU_USER_ID}"
+        - "GROUP_ID:${MAFSHOU_GROUP_ID}"
+    ports:
+      - "${MAFSHOU_PORT_PREFIX}443:${MAFSHOU_PORT_PREFIX}443"
+    depends_on:
+      - db
+    environment:
+      ENVIRONMENT_MODE: ${MAFSHOU_ENVIRONMENT_MODE}
+      TIMEZONE: ${MAFSHOU_TIMEZONE}
+      TZ: ${MAFSHOU_TIMEZONE}
+      BACKEND_PORT: "${MAFSHOU_PORT_PREFIX}443"
+      DATABASE_URL: "postgres://${MAFSHOU_DATABASE_USERNAME}:${MAFSHOU_DATABASE_PASSWORD}@db:5432/${MAFSHOU_DATABASE_NAME}"
+      DATABASE_SERVER: "db"
+      DATABASE_PORT: "5432"
+      DATABASE_NAME: "${MAFSHOU_DATABASE_NAME}"
+      DATABASE_USER: "${MAFSHOU_DATABASE_USERNAME}"
+      DATABASE_PASSWORD: "${MAFSHOU_DATABASE_PASSWORD}"
+      REDIS_PORT: "6379"
+      PROJECT_NAME: "${MAFSHOU_PROJECT_NAME}"
+      PROJECT_TITLE: "${MAFSHOU_PROJECT_TITLE}"
+      JWT_SECRET: "${MAFSHOU_JWT_SECRET}"
+      SECRET_KEY: "${MAFSHOU_SECRET_KEY}"
+      SMTP_HOST: "${MAFSHOU_SMTP_HOST}"
+      SMTP_PORT: "${MAFSHOU_SMTP_PORT}"
+      SMTP_USERNAME: "${MAFSHOU_SMTP_USERNAME}"
+      SMTP_PASSWORD: "${MAFSHOU_SMTP_PASSWORD}"
+
+
+  # frontend:
+  #   image: "${MAFSHOU_PROJECT_NAME}_frontend:latest"
+  #   container_name: "${MAFSHOU_PROJECT_NAME}_frontend"
+  #   build:
+  #     context: "./"
+  #     dockerfile: "./docker/frontend/Dockerfile"
+  #     args:
+  #       - "ENVIRONMENT_MODE=${MAFSHOU_ENVIRONMENT_MODE}"
+  #       - "TIMEZONE=${MAFSHOU_TIMEZONE}"
+  #       - "USER_ID:${MAFSHOU_USER_ID}"
+  #       - "GROUP_ID:${MAFSHOU_GROUP_ID}"
+  #   ports:
+  #     - "${MAFSHOU_PORT_PREFIX}300:${MAFSHOU_PORT_PREFIX}300"
+  #   depends_on:
+  #     - backend
+  #   environment:
+  #     ENVIRONMENT_MODE: ${MAFSHOU_ENVIRONMENT_MODE}
+  #     TIMEZONE: ${MAFSHOU_TIMEZONE}
+  #     TZ: ${MAFSHOU_TIMEZONE}
+  #     FRONTEND_PORT: "${MAFSHOU_PORT_PREFIX}300"
+  #     PORT: "${MAFSHOU_PORT_PREFIX}300"
+  #     SSR_API_URL: "https://backend:${MAFSHOU_PORT_PREFIX}443"
+  #     CLIENT_API_URL: "https://localhost:${MAFSHOU_PORT_PREFIX}443"
+
+volumes:
+  db_data:
+  # search_data:
+  # messaging_data:
+
+networks:
+  default-network:
+    name: "${MAFSHOU_PROJECT_NAME}_default_network"
